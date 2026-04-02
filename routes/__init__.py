@@ -5,7 +5,7 @@ import logging
 
 from aiohttp import web
 
-from routes import websocket, candles, trading
+from routes import websocket, candles, trading, portfolio
 
 log = logging.getLogger("mockex.routes")
 
@@ -38,3 +38,8 @@ def setup_routes(app: web.Application):
     app.router.add_get("/api/trades", trading.handle_get_trades)
     app.router.add_get("/api/account", trading.handle_get_account)
     app.router.add_post("/api/account/reset", trading.handle_reset_account)
+
+    # Portfolio endpoints
+    app.router.add_get("/api/portfolio", portfolio.handle_get_portfolio)
+    app.router.add_get("/api/portfolio/snapshots", portfolio.handle_get_snapshots)
+    app.router.add_get("/api/portfolio/trades", portfolio.handle_get_portfolio_trades)
