@@ -6,10 +6,11 @@
 import { state, subscribe } from './state.js';
 import { loadCandles, MAX_CANDLES } from './api.js';
 import { drawChart, scheduleChartDraw, initChartInteraction } from './chart.js';
-import { connectProxy, setStreamHandlers } from './websocket.js';
+import { connectProxy, setStreamHandlers, setTradingMessageHandler, getWs, onReconnect } from './websocket.js';
 import { onTicker, startTimers } from './ticker.js';
 import { onTrade } from './trades.js';
 import { onDepth } from './orderbook.js';
+import { initTrading, onTradingMessage, setTradingWs } from './trading.js';
 
 /**
  * Handle 1-second kline stream data.
@@ -59,6 +60,9 @@ setStreamHandlers({
   'btcusdt@depth10': onDepth,
 });
 
+// ── Register trading message handler ──
+setTradingMessageHandler(onTradingMessage);
+
 // ── Subscribe to state changes that require chart redraws ──
 subscribe('candles', () => drawChart());
 
@@ -68,6 +72,10 @@ async function init() {
   initChartInteraction();
   await loadCandles();
   connectProxy();
+
+  // Init trading panel after WS connects
+  onReconnect((ws) => setTradingWs(ws));
+  setTimeout(() => initTrading(getWs()), 500);
 
   // Redraw chart on window resize
   let resizeTimer = null;
