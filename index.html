@@ -15,6 +15,10 @@
       <span class="logo-text">BTC / USDT</span>
     </div>
     <span class="pair-badge">Spot</span>
+    <nav class="header-nav">
+      <button class="nav-btn active" id="nav-trading">Trading</button>
+      <button class="nav-btn" id="nav-portfolio">Portfolio</button>
+    </nav>
   </div>
   <div class="header-right">
     <div class="live-badge" id="live-badge" style="display:none"><span class="live-dot"></span>LIVE</div>
@@ -160,6 +164,87 @@
 
 <!-- Notifications -->
 <div id="notifications" class="notifications"></div>
+
+<!-- Portfolio View (hidden by default) -->
+<div id="portfolio-view" class="portfolio-view" style="display:none">
+  <!-- Metric Cards -->
+  <div class="portfolio-metrics">
+    <div class="metric-card">
+      <div class="metric-label">Total Equity</div>
+      <div class="metric-value mono" id="pm-equity">$0.00</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total PnL</div>
+      <div class="metric-value mono" id="pm-pnl">$0.00</div>
+      <div class="metric-sub mono" id="pm-roi">0.00%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Win Rate</div>
+      <div class="metric-value mono" id="pm-winrate">0.0%</div>
+      <div class="metric-sub mono" id="pm-wincount">0/0</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Sharpe Ratio</div>
+      <div class="metric-value mono" id="pm-sharpe">0.00</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Max Drawdown</div>
+      <div class="metric-value mono" id="pm-drawdown" style="color:var(--red)">0.00%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Profit Factor</div>
+      <div class="metric-value mono" id="pm-profitfactor">0.00</div>
+    </div>
+  </div>
+
+  <!-- Equity Curve -->
+  <div class="card portfolio-chart-card">
+    <div class="portfolio-chart-header">
+      <h2>Equity Curve</h2>
+      <div class="time-range-btns">
+        <button class="time-range-btn" data-range="1D">1D</button>
+        <button class="time-range-btn" data-range="1W">1W</button>
+        <button class="time-range-btn" data-range="1M">1M</button>
+        <button class="time-range-btn active" data-range="ALL">ALL</button>
+      </div>
+    </div>
+    <div class="portfolio-chart-container">
+      <canvas id="equity-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- PnL by Trade -->
+  <div class="card portfolio-chart-card">
+    <h2>PnL by Trade</h2>
+    <div class="portfolio-chart-container pnl-chart">
+      <canvas id="pnl-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Trade Log -->
+  <div class="card">
+    <h2>Trade Log</h2>
+    <div class="trade-log-wrapper">
+      <table class="trading-table trade-log-table">
+        <thead id="trade-log-head">
+          <tr>
+            <th data-sort="executed_at">Date</th>
+            <th>Side</th>
+            <th data-sort="entry_price">Entry</th>
+            <th data-sort="exit_price">Exit</th>
+            <th data-sort="quantity">Qty</th>
+            <th data-sort="fee">Fee</th>
+            <th data-sort="pnl">PnL</th>
+            <th data-sort="duration_seconds">Duration</th>
+          </tr>
+        </thead>
+        <tbody id="trade-log-body">
+          <tr><td colspan="8" class="trading-empty">No closed trades</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <footer>
   <span>BTC/USDT Real-Time Dashboard</span>

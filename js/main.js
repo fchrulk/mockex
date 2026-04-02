@@ -11,6 +11,7 @@ import { onTicker, startTimers } from './ticker.js';
 import { onTrade } from './trades.js';
 import { onDepth } from './orderbook.js';
 import { initTrading, onTradingMessage, setTradingWs } from './trading.js';
+import { initPortfolio } from './portfolio.js';
 
 /**
  * Handle 1-second kline stream data.
@@ -76,6 +77,9 @@ async function init() {
   // Init trading panel after WS connects
   onReconnect((ws) => setTradingWs(ws));
   setTimeout(() => initTrading(getWs()), 500);
+
+  // Init portfolio view
+  initPortfolio();
 
   // Redraw chart on window resize
   let resizeTimer = null;

@@ -12,6 +12,7 @@ from aiohttp import web
 from services import config
 from services.binance import BinanceService
 from services.matching import MatchingEngine
+from services.portfolio import PortfolioService
 from services import db
 from routes import setup_routes
 
@@ -37,6 +38,11 @@ async def on_startup(app: web.Application):
     await matching.init()
     app["matching"] = matching
 
+    # Portfolio service
+    portfolio = PortfolioService(matching)
+    app["portfolio"] = portfolio
+    await portfolio.start()
+
     # Binance relay
     binance = BinanceService(matching_engine=matching)
     app["binance"] = binance
@@ -45,6 +51,9 @@ async def on_startup(app: web.Application):
 
 async def on_cleanup(app: web.Application):
     """Shut down services gracefully."""
+    portfolio = app.get("portfolio")
+    if portfolio:
+        await portfolio.stop()
     binance = app.get("binance")
     if binance:
         await binance.stop()

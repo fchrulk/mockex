@@ -23,9 +23,11 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | `routes/websocket.py` | Browser WebSocket handler (market data + trading messages) |
 | `routes/candles.py` | GET /api/candles endpoint |
 | `routes/trading.py` | REST endpoints: orders, positions, trades, account |
+| `routes/portfolio.py` | REST endpoints: portfolio metrics, snapshots, trades |
 | `services/config.py` | Configuration from .env with defaults |
 | `services/binance.py` | Binance WebSocket relay + candle cache + matching feed |
 | `services/matching.py` | Paper trading engine: validation, fills, positions, PnL |
+| `services/portfolio.py` | Portfolio analytics: snapshots, metrics, benchmark |
 | `services/db.py` | asyncpg pool + SQL migration runner |
 | `models/migrations/` | Numbered SQL migration files |
 | `index.html` | HTML layout (dashboard + trading panel) |
@@ -34,6 +36,7 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | `js/state.js` | Centralized pub/sub state store |
 | `js/websocket.js` | WebSocket connection + reconnect + trading message routing |
 | `js/trading.js` | Trading panel: wallet, order entry, positions/orders/history |
+| `js/portfolio.js` | Portfolio view: metrics, equity curve, PnL chart, trade log |
 | `js/api.js` | REST API fetch wrappers |
 | `js/chart.js` | Candlestick chart + hover/crosshair |
 | `js/rsi.js` | RSI sub-chart rendering |
@@ -118,6 +121,21 @@ Connected via combined stream endpoint:
 
 WebSocket messages: `place_order`, `cancel_order`, `close_position`, `reset_account` (client→server); `order_update`, `trade_executed`, `balance_update`, `position_update` (server→client).
 
+## Portfolio Dashboard
+
+- SPA toggle: Trading/Portfolio buttons in header (no page navigation)
+- Portfolio snapshots taken every 5 minutes (asyncio task loop)
+- 6 metric cards: Total Equity, Total PnL ($/%), Win Rate, Sharpe Ratio, Max Drawdown, Profit Factor
+- Equity curve: canvas line chart with buy-and-hold benchmark, time range filters (1D/1W/1M/ALL)
+- PnL by trade: canvas bar chart (green wins, red losses)
+- Trade log: sortable table with entry/exit prices, fee, PnL, duration
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/portfolio` | All performance metrics |
+| GET | `/api/portfolio/snapshots` | Equity curve data (?from, ?to) |
+| GET | `/api/portfolio/trades` | Closed trades with entry/exit/PnL/duration |
+
 ## Design Specs & Plans
 
 See `docs/superpowers/specs/` for approved design specs (6 total).
@@ -127,7 +145,7 @@ See `docs/superpowers/plans/` for implementation plans.
 
 - [x] Spec 1: Foundation & Refactoring
 - [x] Spec 2: Trading Engine
-- [ ] Spec 3: Portfolio & PnL
+- [x] Spec 3: Portfolio & PnL
 - [ ] Spec 4: Chart & Indicators
 - [ ] Spec 5: AI Trading Signals
 - [ ] Spec 6: Polish & Extras
