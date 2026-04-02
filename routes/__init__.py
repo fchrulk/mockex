@@ -5,7 +5,7 @@ import logging
 
 from aiohttp import web
 
-from routes import websocket, candles
+from routes import websocket, candles, trading
 
 log = logging.getLogger("mockex.routes")
 
@@ -29,3 +29,12 @@ def setup_routes(app: web.Application):
     app.middlewares.append(error_middleware)
     app.router.add_get("/ws", websocket.handle_ws)
     app.router.add_get("/api/candles", candles.handle_candles)
+
+    # Trading endpoints
+    app.router.add_post("/api/orders", trading.handle_place_order)
+    app.router.add_delete("/api/orders/{order_id}", trading.handle_cancel_order)
+    app.router.add_get("/api/orders", trading.handle_list_orders)
+    app.router.add_get("/api/positions", trading.handle_get_positions)
+    app.router.add_get("/api/trades", trading.handle_get_trades)
+    app.router.add_get("/api/account", trading.handle_get_account)
+    app.router.add_post("/api/account/reset", trading.handle_reset_account)

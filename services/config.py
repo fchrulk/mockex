@@ -30,6 +30,10 @@ DB_USER = _get("DB_USER", "fchrulk")
 DB_PASSWORD = _get("DB_PASSWORD", "")
 DB_SCHEMA = _get("DB_SCHEMA", "mockex")
 
+# Trading
+TRADING_FEE_RATE = float(_get("TRADING_FEE_RATE", "0.001"))
+INITIAL_BALANCE = float(_get("INITIAL_BALANCE", "100000.00"))
+
 # Binance
 BINANCE_SYMBOL = _get("BINANCE_SYMBOL", "btcusdt")
 BINANCE_WS_URL = (

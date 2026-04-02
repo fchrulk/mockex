@@ -89,6 +89,78 @@
   </div>
 </div>
 
+<!-- Wallet Bar -->
+<div id="wallet-bar" class="wallet-bar">
+  <div class="wallet-item">
+    <span class="wallet-label">Available</span>
+    <span class="wallet-value cash" id="wallet-cash">$0.00</span>
+  </div>
+  <div class="wallet-item">
+    <span class="wallet-label">Reserved</span>
+    <span class="wallet-value reserved" id="wallet-reserved">$0.00</span>
+  </div>
+  <div class="wallet-item">
+    <span class="wallet-label">Equity</span>
+    <span class="wallet-value equity" id="wallet-equity">$0.00</span>
+  </div>
+  <button id="btn-reset" class="reset-btn">Reset</button>
+</div>
+
+<!-- Trading Panel -->
+<div class="trading-panel">
+  <!-- Order Entry -->
+  <div class="card order-entry">
+    <h2>Place Order</h2>
+    <div class="order-type-tabs">
+      <button class="order-type-btn active" data-type="market">Market</button>
+      <button class="order-type-btn" data-type="limit">Limit</button>
+      <button class="order-type-btn" data-type="stop">Stop</button>
+    </div>
+    <div class="order-form">
+      <div class="order-row">
+        <label>Quantity (BTC)</label>
+        <input type="number" id="order-qty" step="0.000001" min="0" placeholder="0.00" class="mono">
+      </div>
+      <div class="order-row" id="price-row" style="display:none">
+        <label>Price (USD)</label>
+        <input type="number" id="order-price" step="0.01" min="0" placeholder="0.00" class="mono">
+      </div>
+      <div class="order-row" id="stop-row" style="display:none">
+        <label>Stop Price (USD)</label>
+        <input type="number" id="order-stop" step="0.01" min="0" placeholder="0.00" class="mono">
+      </div>
+      <div class="qty-shortcuts">
+        <span class="side-btn active" data-side="buy">Buy</span>
+        <span class="side-btn" data-side="sell">Sell</span>
+        <button class="qty-btn" data-pct="25">25%</button>
+        <button class="qty-btn" data-pct="50">50%</button>
+        <button class="qty-btn" data-pct="75">75%</button>
+        <button class="qty-btn" data-pct="100">100%</button>
+      </div>
+      <div id="order-estimate" class="order-estimate mono">Est: $0.00  |  Fee: $0.00  |  Total: $0.00</div>
+      <div class="order-buttons">
+        <button id="btn-buy" class="order-btn buy-btn">BUY</button>
+        <button id="btn-sell" class="order-btn sell-btn">SELL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Positions / Orders / History Tabs -->
+  <div class="card trading-tabs-panel">
+    <div class="trading-tabs">
+      <button class="trading-tab-btn active" data-tab="positions">Open Positions</button>
+      <button class="trading-tab-btn" data-tab="orders">Open Orders</button>
+      <button class="trading-tab-btn" data-tab="history">Trade History</button>
+    </div>
+    <div id="trading-tab-content" class="trading-tab-content">
+      <div class="trading-empty">No open positions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications -->
+<div id="notifications" class="notifications"></div>
+
 <footer>
   <span>BTC/USDT Real-Time Dashboard</span>
   <span id="footer-time"></span>

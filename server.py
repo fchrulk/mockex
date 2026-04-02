@@ -11,6 +11,7 @@ from aiohttp import web
 
 from services import config
 from services.binance import BinanceService
+from services.matching import MatchingEngine
 from services import db
 from routes import setup_routes
 
@@ -31,8 +32,13 @@ async def on_startup(app: web.Application):
     except Exception as e:
         log.warning("Database unavailable: %s — running without DB", e)
 
+    # Matching engine
+    matching = MatchingEngine()
+    await matching.init()
+    app["matching"] = matching
+
     # Binance relay
-    binance = BinanceService()
+    binance = BinanceService(matching_engine=matching)
     app["binance"] = binance
     await binance.start()
 

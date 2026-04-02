@@ -17,12 +17,13 @@ log = logging.getLogger("mockex.binance")
 class BinanceService:
     """Maintains a persistent Binance WS connection and fans out to browser clients."""
 
-    def __init__(self):
+    def __init__(self, matching_engine=None):
         self.browser_clients: set[web.WebSocketResponse] = set()
         self.latest_messages: dict[str, str] = {}
         self._cached_candles: str | None = None
         self._cached_candles_ts: float = 0
         self._relay_task: asyncio.Task | None = None
+        self._matching_engine = matching_engine
 
     async def start(self):
         """Start the Binance relay background task."""
@@ -54,9 +55,14 @@ class BinanceService:
                     async for raw in ws:
                         data = json.loads(raw)
                         stream = data.get("stream", "")
-                        tagged = json.dumps({"stream": stream, "data": data.get("data", data)})
+                        payload = data.get("data", data)
+                        tagged = json.dumps({"stream": stream, "data": payload})
                         self.latest_messages[stream] = tagged
                         await self._broadcast(tagged)
+
+                        # Feed matching engine
+                        if self._matching_engine:
+                            await self._feed_matching(stream, payload)
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -96,6 +102,21 @@ class BinanceService:
         if self._cached_candles is None or (time.time() - self._cached_candles_ts) > 30:
             await self._fetch_candles()
         return self._cached_candles
+
+    async def _feed_matching(self, stream: str, data: dict):
+        """Feed market data to the matching engine and check open orders."""
+        engine = self._matching_engine
+        symbol = config.BINANCE_SYMBOL
+
+        if stream == f"{symbol}@depth10":
+            bids = [[float(p), float(q)] for p, q in data.get("bids", [])]
+            asks = [[float(p), float(q)] for p, q in data.get("asks", [])]
+            engine.update_market_data(order_book={"bids": bids, "asks": asks})
+            await engine.on_tick()
+        elif stream == f"{symbol}@trade":
+            price = float(data.get("p", 0))
+            if price > 0:
+                engine.update_market_data(last_price=price)
 
     async def _fetch_candles(self):
         """Fetch initial candles from Binance REST API."""
