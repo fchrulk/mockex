@@ -20,8 +20,7 @@ class BinanceService:
     def __init__(self, matching_engine=None):
         self.browser_clients: set[web.WebSocketResponse] = set()
         self.latest_messages: dict[str, str] = {}
-        self._cached_candles: str | None = None
-        self._cached_candles_ts: float = 0
+        self._candle_cache: dict[str, tuple[str, float]] = {}  # interval -> (json_str, timestamp)
         self._relay_task: asyncio.Task | None = None
         self._matching_engine = matching_engine
 
@@ -97,11 +96,13 @@ class BinanceService:
             except Exception:
                 break
 
-    async def get_candles(self) -> str | None:
-        """Return cached candles, refreshing if stale (>30s)."""
-        if self._cached_candles is None or (time.time() - self._cached_candles_ts) > 30:
-            await self._fetch_candles()
-        return self._cached_candles
+    async def get_candles(self, interval: str = "1m") -> str | None:
+        """Return cached candles for the given interval, refreshing if stale (>30s)."""
+        cached = self._candle_cache.get(interval)
+        if cached is None or (time.time() - cached[1]) > 30:
+            await self._fetch_candles(interval)
+        cached = self._candle_cache.get(interval)
+        return cached[0] if cached else None
 
     async def _feed_matching(self, stream: str, data: dict):
         """Feed market data to the matching engine and check open orders."""
@@ -118,13 +119,15 @@ class BinanceService:
             if price > 0:
                 engine.update_market_data(last_price=price)
 
-    async def _fetch_candles(self):
-        """Fetch initial candles from Binance REST API."""
+    async def _fetch_candles(self, interval: str = "1m"):
+        """Fetch candles from Binance REST API for the given interval."""
+        symbol = config.BINANCE_SYMBOL.upper()
+        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit=130"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(config.BINANCE_CANDLES_URL) as resp:
-                    self._cached_candles = await resp.text()
-                    self._cached_candles_ts = time.time()
-                    log.info("Fetched candles (%d bytes)", len(self._cached_candles))
+                async with session.get(url) as resp:
+                    text = await resp.text()
+                    self._candle_cache[interval] = (text, time.time())
+                    log.info("Fetched %s candles (%d bytes)", interval, len(text))
         except Exception as e:
-            log.warning("Failed to fetch candles: %s", e)
+            log.warning("Failed to fetch %s candles: %s", interval, e)
