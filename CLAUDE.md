@@ -7,17 +7,37 @@ Mockex is a real-time BTC/USDT trading dashboard that streams live market data f
 ## Architecture
 
 ```
-Binance WebSocket API → server.py (aiohttp proxy) → Browser WebSocket → Canvas chart + UI
-Binance REST API (/klines) → server.py (/api/candles) → Initial chart data
+Binance WebSocket API → services/binance.py → Browser WebSocket → ES module UI
+Binance REST API (/klines) → routes/candles.py → Initial chart data
+Config: .env → services/config.py
+Database: PostgreSQL → services/db.py (asyncpg + migrations)
 ```
 
 ## Files
 
-| File | Purpose |
+| File/Dir | Purpose |
 |---|---|
-| `server.py` | aiohttp WebSocket proxy — connects to Binance server-side, fans out to browser clients, caches candles |
-| `index.html` | Single-file frontend — dark trading terminal UI, canvas candlestick chart, order book, trades, 24h stats |
-| `serve.py` | Legacy simple HTTP server (unused, kept for reference) |
+| `server.py` | Entry point — wires up routes, services, static files |
+| `routes/websocket.py` | Browser WebSocket handler |
+| `routes/candles.py` | GET /api/candles endpoint |
+| `services/config.py` | Configuration from .env with defaults |
+| `services/binance.py` | Binance WebSocket relay + candle cache |
+| `services/db.py` | asyncpg pool + SQL migration runner |
+| `models/migrations/` | Numbered SQL migration files |
+| `index.html` | HTML layout only (~99 lines) |
+| `css/styles.css` | All CSS styles |
+| `js/main.js` | Frontend entry point, initialization |
+| `js/state.js` | Centralized pub/sub state store |
+| `js/websocket.js` | WebSocket connection + reconnect |
+| `js/api.js` | REST API fetch wrappers |
+| `js/chart.js` | Candlestick chart + hover/crosshair |
+| `js/rsi.js` | RSI sub-chart rendering |
+| `js/indicators.js` | SMA, RSI calculation (pure math) |
+| `js/orderbook.js` | Order book rendering |
+| `js/trades.js` | Recent trades feed |
+| `js/ticker.js` | Price display, 24h stats, timers |
+| `js/utils.js` | Number/date formatting helpers |
+| `serve.py` | Legacy simple HTTP server (unused) |
 
 ## Running
 
@@ -40,6 +60,10 @@ ssh -L 3000:localhost:3000 <vps>
 Python venv at `/home/fchrulk/venvs/btc-dashboard/`:
 - `aiohttp` — HTTP server + WebSocket + REST client
 - `websockets` — Binance upstream WebSocket connection
+- `asyncpg` — Async PostgreSQL driver
+- `python-dotenv` — .env file loading
+
+See `requirements.txt` for pinned versions.
 
 ## Binance Streams
 
@@ -57,11 +81,10 @@ Connected via combined stream endpoint:
 - Chart redraws throttled via `requestAnimationFrame`
 - Server auto-reconnects to Binance on disconnect (3s retry)
 - Candle cache refreshes every 30s
+- Database migrations run automatically on server startup
+- Config loaded from `.env` with sensible defaults
 
-## Future Plans (Mockex Trading Simulator)
+## Design Specs & Plans
 
-Phase 1: Virtual wallet + market buy/sell
-Phase 2: Limit/stop orders + order matching
-Phase 3: Portfolio view + PnL tracking
-Phase 4: Historical replay + backtesting
-Phase 5: AI decision layer
+See `docs/superpowers/specs/` for approved design specs (6 total).
+See `docs/superpowers/plans/` for implementation plans.
