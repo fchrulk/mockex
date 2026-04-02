@@ -34,6 +34,8 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | `css/styles.css` | All CSS styles |
 | `js/main.js` | Frontend entry point, initialization |
 | `js/state.js` | Centralized pub/sub state store |
+| `js/indicator-settings.js` | Indicator toggle state, params, localStorage persistence |
+| `js/macd.js` | MACD sub-chart rendering |
 | `js/websocket.js` | WebSocket connection + reconnect + trading message routing |
 | `js/trading.js` | Trading panel: wallet, order entry, positions/orders/history |
 | `js/portfolio.js` | Portfolio view: metrics, equity curve, PnL chart, trade log |
@@ -83,10 +85,12 @@ Connected via combined stream endpoint:
 
 ## Key Behaviors
 
-- Candlestick chart is 1-minute interval, rendered on HTML Canvas
-- Last candle updates in real-time from trade events (close/high/low)
-- Technical indicators: SMA(7), SMA(25), RSI(14) computed client-side
+- Candlestick chart with zoom (mouse wheel, 20-200 candles) and pan (click-drag)
+- Six timeframes: 1m, 5m, 15m, 1h, 4h, 1d — real-time aggregation from 1s klines
+- Indicators: SMA, RSI, MACD, Bollinger Bands, Volume Profile — all toggleable
+- Indicator parameters customizable via panel, persisted to localStorage
 - Chart redraws throttled via `requestAnimationFrame`
+- Candle REST endpoint fetches 130 candles (30 warmup + 100 display) per interval
 - Server auto-reconnects to Binance on disconnect (3s retry)
 - Candle cache refreshes every 30s
 - Database migrations run automatically on server startup
@@ -146,6 +150,6 @@ See `docs/superpowers/plans/` for implementation plans.
 - [x] Spec 1: Foundation & Refactoring
 - [x] Spec 2: Trading Engine
 - [x] Spec 3: Portfolio & PnL
-- [ ] Spec 4: Chart & Indicators
+- [x] Spec 4: Chart & Indicators
 - [ ] Spec 5: AI Trading Signals
 - [ ] Spec 6: Polish & Extras

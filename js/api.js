@@ -4,12 +4,12 @@
 
 import { update } from './state.js';
 
-export const MAX_CANDLES = 100;
+export const MAX_CANDLES = 200;
 
-/** Fetch initial candle data from server. */
-export async function loadCandles() {
+/** Fetch candle data from server for the given interval. */
+export async function loadCandles(interval = '1m') {
   try {
-    const resp = await fetch('/api/candles');
+    const resp = await fetch(`/api/candles?interval=${interval}`);
     const data = await resp.json();
     const candles = data.map((k) => ({
       t: k[0],

@@ -44,13 +44,25 @@
 
   <!-- Chart -->
   <div class="card chart-section">
-    <h2>1-Minute Candles</h2>
+    <div class="chart-header">
+      <h2>Candles</h2>
+      <div class="tf-buttons">
+        <button class="tf-btn active" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="1h">1h</button>
+        <button class="tf-btn" data-tf="4h">4h</button>
+        <button class="tf-btn" data-tf="1d">1d</button>
+      </div>
+    </div>
+    <div id="indicator-toggles" class="indicator-toggles"></div>
     <div id="chart-container">
       <canvas id="chart-canvas"></canvas>
       <div id="chart-tooltip"></div>
       <div id="chart-crosshair"><div id="ch-h"></div><div id="ch-v"></div><div id="ch-price-label"></div></div>
     </div>
     <div id="rsi-container"><canvas id="rsi-canvas"></canvas></div>
+    <div id="macd-container" style="display:none"><canvas id="macd-canvas"></canvas></div>
     <div class="indicator-legend">
       <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>SMA 7</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ff9800"></div>SMA 25</div>

@@ -4,9 +4,10 @@
 
 import { calcRSI } from './indicators.js';
 
-export function drawRSI(candles) {
+export function drawRSI(allCandles, start, end, period = 14) {
   const canvas = document.getElementById('rsi-canvas');
   const container = document.getElementById('rsi-container');
+  if (!canvas || !container) return;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = container.clientWidth * dpr;
   canvas.height = container.clientHeight * dpr;
@@ -23,8 +24,10 @@ export function drawRSI(candles) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  const rsi = calcRSI(candles);
-  const cw = (W - padL - padR) / candles.length;
+  const rsiAll = calcRSI(allCandles, period);
+  const rsi = rsiAll.slice(start, end);
+  const visibleCount = end - start;
+  const cw = (W - padL - padR) / visibleCount;
   const yR = (v) => 5 + (1 - v / 100) * (H - 10);
 
   // Overbought zone
