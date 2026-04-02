@@ -24,8 +24,11 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | `routes/candles.py` | GET /api/candles endpoint |
 | `routes/trading.py` | REST endpoints: orders, positions, trades, account |
 | `routes/portfolio.py` | REST endpoints: portfolio metrics, snapshots, trades |
+| `routes/signals.py` | REST endpoints: active signals, history, analysis |
 | `services/config.py` | Configuration from .env with defaults |
 | `services/binance.py` | Binance WebSocket relay + candle cache + matching feed |
+| `services/signals.py` | AI signal engine: rule-based + Claude API analysis |
+| `services/indicators.py` | Server-side indicator calculations (Python) |
 | `services/matching.py` | Paper trading engine: validation, fills, positions, PnL |
 | `services/portfolio.py` | Portfolio analytics: snapshots, metrics, benchmark |
 | `services/db.py` | asyncpg pool + SQL migration runner |
@@ -39,6 +42,7 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | `js/websocket.js` | WebSocket connection + reconnect + trading message routing |
 | `js/trading.js` | Trading panel: wallet, order entry, positions/orders/history |
 | `js/portfolio.js` | Portfolio view: metrics, equity curve, PnL chart, trade log |
+| `js/signals.js` | Signal UI: AI analysis card, active signals, signal history |
 | `js/api.js` | REST API fetch wrappers |
 | `js/chart.js` | Candlestick chart + hover/crosshair |
 | `js/rsi.js` | RSI sub-chart rendering |
@@ -151,5 +155,5 @@ See `docs/superpowers/plans/` for implementation plans.
 - [x] Spec 2: Trading Engine
 - [x] Spec 3: Portfolio & PnL
 - [x] Spec 4: Chart & Indicators
-- [ ] Spec 5: AI Trading Signals
+- [x] Spec 5: AI Trading Signals
 - [ ] Spec 6: Polish & Extras
