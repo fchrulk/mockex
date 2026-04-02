@@ -13,6 +13,7 @@ import { onDepth } from './orderbook.js';
 import { initTrading, onTradingMessage, setTradingWs } from './trading.js';
 import { initPortfolio } from './portfolio.js';
 import { initIndicatorPanel } from './indicator-settings.js';
+import { initSignals, onSignalMessage } from './signals.js';
 
 /**
  * Handle 1-second kline stream data.
@@ -64,8 +65,11 @@ setStreamHandlers({
   'btcusdt@depth10': onDepth,
 });
 
-// ── Register trading message handler ──
-setTradingMessageHandler(onTradingMessage);
+// ── Register message handler for trading + signals ──
+setTradingMessageHandler((msg) => {
+  onTradingMessage(msg);
+  onSignalMessage(msg);
+});
 
 // ── Subscribe to state changes that require chart redraws ──
 subscribe('candles', () => drawChart());
@@ -97,8 +101,9 @@ async function init() {
   onReconnect((ws) => setTradingWs(ws));
   setTimeout(() => initTrading(getWs()), 500);
 
-  // Init portfolio view
+  // Init portfolio view and signals
   initPortfolio();
+  initSignals();
 
   // Redraw chart on window resize
   let resizeTimer = null;

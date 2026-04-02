@@ -17,12 +17,13 @@ log = logging.getLogger("mockex.binance")
 class BinanceService:
     """Maintains a persistent Binance WS connection and fans out to browser clients."""
 
-    def __init__(self, matching_engine=None):
+    def __init__(self, matching_engine=None, signal_engine=None):
         self.browser_clients: set[web.WebSocketResponse] = set()
         self.latest_messages: dict[str, str] = {}
         self._candle_cache: dict[str, tuple[str, float]] = {}  # interval -> (json_str, timestamp)
         self._relay_task: asyncio.Task | None = None
         self._matching_engine = matching_engine
+        self._signal_engine = signal_engine
 
     async def start(self):
         """Start the Binance relay background task."""
@@ -118,6 +119,17 @@ class BinanceService:
             price = float(data.get("p", 0))
             if price > 0:
                 engine.update_market_data(last_price=price)
+        elif stream == f"{symbol}@kline_1s" and self._signal_engine:
+            k = data.get("k", {})
+            if k.get("x"):  # kline closed
+                self._signal_engine.on_candle({
+                    "t": k["t"],
+                    "o": float(k["o"]),
+                    "h": float(k["h"]),
+                    "l": float(k["l"]),
+                    "c": float(k["c"]),
+                    "v": float(k["v"]),
+                })
 
     async def _fetch_candles(self, interval: str = "1m"):
         """Fetch candles from Binance REST API for the given interval."""
