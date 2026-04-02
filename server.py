@@ -13,6 +13,7 @@ from services import config
 from services.binance import BinanceService
 from services.matching import MatchingEngine
 from services.portfolio import PortfolioService
+from services.signals import SignalEngine
 from services import db
 from routes import setup_routes
 
@@ -43,14 +44,22 @@ async def on_startup(app: web.Application):
     app["portfolio"] = portfolio
     await portfolio.start()
 
+    # Signal engine
+    signals = SignalEngine(matching)
+    app["signals"] = signals
+    await signals.start()
+
     # Binance relay
-    binance = BinanceService(matching_engine=matching)
+    binance = BinanceService(matching_engine=matching, signal_engine=signals)
     app["binance"] = binance
     await binance.start()
 
 
 async def on_cleanup(app: web.Application):
     """Shut down services gracefully."""
+    signals_svc = app.get("signals")
+    if signals_svc:
+        await signals_svc.stop()
     portfolio = app.get("portfolio")
     if portfolio:
         await portfolio.stop()

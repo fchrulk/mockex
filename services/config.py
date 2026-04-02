@@ -34,6 +34,9 @@ DB_SCHEMA = _get("DB_SCHEMA", "mockex")
 TRADING_FEE_RATE = float(_get("TRADING_FEE_RATE", "0.001"))
 INITIAL_BALANCE = float(_get("INITIAL_BALANCE", "100000.00"))
 
+# AI Signals
+CLAUDE_API_KEY = _get("CLAUDE_API_KEY", "")
+
 # Binance
 BINANCE_SYMBOL = _get("BINANCE_SYMBOL", "btcusdt")
 BINANCE_WS_URL = (

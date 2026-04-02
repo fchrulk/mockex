@@ -12,12 +12,15 @@ async def handle_ws(request: web.Request) -> web.WebSocketResponse:
     """Accept a browser WebSocket connection and relay Binance data + trading messages."""
     binance = request.app["binance"]
     engine = request.app.get("matching")
+    signals = request.app.get("signals")
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
     binance.add_client(ws)
     if engine:
         engine.browser_clients.add(ws)
+    if signals:
+        signals.browser_clients.add(ws)
     await binance.send_cached_to(ws)
 
     # Send initial trading state
@@ -39,6 +42,8 @@ async def handle_ws(request: web.Request) -> web.WebSocketResponse:
         binance.remove_client(ws)
         if engine:
             engine.browser_clients.discard(ws)
+        if signals:
+            signals.browser_clients.discard(ws)
 
     return ws
 

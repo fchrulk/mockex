@@ -4,6 +4,7 @@
  */
 
 import { fmt } from './utils.js';
+import { renderSignalHistory } from './signals.js';
 
 let _visible = false;
 let _metrics = {};
@@ -58,6 +59,7 @@ async function _refreshAll() {
   _drawEquityCurve();
   _drawPnlChart();
   _renderTradeLog();
+  renderSignalHistory(document.getElementById('signal-history-content'));
 }
 
 // ── Data Fetching ──
