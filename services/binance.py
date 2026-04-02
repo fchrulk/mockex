@@ -1,0 +1,109 @@
+"""Binance WebSocket relay and candle cache service."""
+
+import asyncio
+import json
+import logging
+import time
+
+import aiohttp
+from aiohttp import web
+import websockets
+
+from services import config
+
+log = logging.getLogger("mockex.binance")
+
+
+class BinanceService:
+    """Maintains a persistent Binance WS connection and fans out to browser clients."""
+
+    def __init__(self):
+        self.browser_clients: set[web.WebSocketResponse] = set()
+        self.latest_messages: dict[str, str] = {}
+        self._cached_candles: str | None = None
+        self._cached_candles_ts: float = 0
+        self._relay_task: asyncio.Task | None = None
+
+    async def start(self):
+        """Start the Binance relay background task."""
+        self._relay_task = asyncio.create_task(self._relay_loop())
+        log.info("Binance relay started")
+
+    async def stop(self):
+        """Cancel the relay task and close all browser clients."""
+        if self._relay_task:
+            self._relay_task.cancel()
+            try:
+                await self._relay_task
+            except asyncio.CancelledError:
+                pass
+        for client in list(self.browser_clients):
+            await client.close()
+        self.browser_clients.clear()
+        log.info("Binance relay stopped")
+
+    async def _relay_loop(self):
+        """Maintain a persistent connection to Binance and fan-out to browsers."""
+        while True:
+            try:
+                log.info("Connecting to Binance WebSocket...")
+                async with websockets.connect(
+                    config.BINANCE_WS_URL, ping_interval=20, ping_timeout=10
+                ) as ws:
+                    log.info("Connected to Binance WebSocket")
+                    async for raw in ws:
+                        data = json.loads(raw)
+                        stream = data.get("stream", "")
+                        tagged = json.dumps({"stream": stream, "data": data.get("data", data)})
+                        self.latest_messages[stream] = tagged
+                        await self._broadcast(tagged)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                log.warning("Binance WS error: %s — reconnecting in 3s", e)
+            await asyncio.sleep(3)
+
+    async def _broadcast(self, message: str):
+        """Send a message to all connected browser clients."""
+        dead = set()
+        for client in self.browser_clients:
+            try:
+                await client.send_str(message)
+            except Exception:
+                dead.add(client)
+        self.browser_clients -= dead
+
+    def add_client(self, ws: web.WebSocketResponse):
+        """Register a new browser client."""
+        self.browser_clients.add(ws)
+        log.info("Browser client connected (%d total)", len(self.browser_clients))
+
+    def remove_client(self, ws: web.WebSocketResponse):
+        """Unregister a browser client."""
+        self.browser_clients.discard(ws)
+        log.info("Browser client disconnected (%d remaining)", len(self.browser_clients))
+
+    async def send_cached_to(self, ws: web.WebSocketResponse):
+        """Send latest cached messages to a newly connected client."""
+        for msg in self.latest_messages.values():
+            try:
+                await ws.send_str(msg)
+            except Exception:
+                break
+
+    async def get_candles(self) -> str | None:
+        """Return cached candles, refreshing if stale (>30s)."""
+        if self._cached_candles is None or (time.time() - self._cached_candles_ts) > 30:
+            await self._fetch_candles()
+        return self._cached_candles
+
+    async def _fetch_candles(self):
+        """Fetch initial candles from Binance REST API."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(config.BINANCE_CANDLES_URL) as resp:
+                    self._cached_candles = await resp.text()
+                    self._cached_candles_ts = time.time()
+                    log.info("Fetched candles (%d bytes)", len(self._cached_candles))
+        except Exception as e:
+            log.warning("Failed to fetch candles: %s", e)
