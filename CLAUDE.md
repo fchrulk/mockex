@@ -2,13 +2,15 @@
 
 ## What is this?
 
-Mockex is a real-time BTC/USDT trading dashboard that streams live market data from Binance. Long-term vision: a full crypto trading simulator (virtual wallet, buy/sell, limit orders, portfolio) using live data.
+Mockex is a real-time BTC/USDT trading dashboard and paper trading simulator. Streams live market data from Binance, supports virtual wallet with market/limit/stop orders, position tracking with live PnL, and order book walking for realistic fill simulation.
 
 ## Architecture
 
 ```
 Binance WebSocket API → services/binance.py → Browser WebSocket → ES module UI
+                                            → services/matching.py (tick-by-tick order checking)
 Binance REST API (/klines) → routes/candles.py → Initial chart data
+Trading: Browser WS/REST → routes/trading.py → services/matching.py → DB + broadcast
 Config: .env → services/config.py
 Database: PostgreSQL → services/db.py (asyncpg + migrations)
 ```
@@ -18,17 +20,20 @@ Database: PostgreSQL → services/db.py (asyncpg + migrations)
 | File/Dir | Purpose |
 |---|---|
 | `server.py` | Entry point — wires up routes, services, static files |
-| `routes/websocket.py` | Browser WebSocket handler |
+| `routes/websocket.py` | Browser WebSocket handler (market data + trading messages) |
 | `routes/candles.py` | GET /api/candles endpoint |
+| `routes/trading.py` | REST endpoints: orders, positions, trades, account |
 | `services/config.py` | Configuration from .env with defaults |
-| `services/binance.py` | Binance WebSocket relay + candle cache |
+| `services/binance.py` | Binance WebSocket relay + candle cache + matching feed |
+| `services/matching.py` | Paper trading engine: validation, fills, positions, PnL |
 | `services/db.py` | asyncpg pool + SQL migration runner |
 | `models/migrations/` | Numbered SQL migration files |
-| `index.html` | HTML layout only (~99 lines) |
+| `index.html` | HTML layout (dashboard + trading panel) |
 | `css/styles.css` | All CSS styles |
 | `js/main.js` | Frontend entry point, initialization |
 | `js/state.js` | Centralized pub/sub state store |
-| `js/websocket.js` | WebSocket connection + reconnect |
+| `js/websocket.js` | WebSocket connection + reconnect + trading message routing |
+| `js/trading.js` | Trading panel: wallet, order entry, positions/orders/history |
 | `js/api.js` | REST API fetch wrappers |
 | `js/chart.js` | Candlestick chart + hover/crosshair |
 | `js/rsi.js` | RSI sub-chart rendering |
@@ -84,7 +89,45 @@ Connected via combined stream endpoint:
 - Database migrations run automatically on server startup
 - Config loaded from `.env` with sensible defaults
 
+## Paper Trading Engine
+
+- Virtual wallet: $100,000 USDT starting balance (configurable)
+- Order types: market (instant fill), limit (price trigger), stop (stop-loss/buy stop)
+- Market orders walk the real order book (depth10) for realistic slippage
+- Limit/stop orders checked on every depth10 tick from Binance
+- Self-crossing: limit orders that cross the spread fill immediately as market
+- One position per symbol (long only, spot simulation)
+- Entry price: volume-weighted average across multiple buys
+- Realized PnL on sell: `(sell_price - entry_price) × qty - fee`
+- Unrealized PnL updated live: `(current_price - entry_price) × qty`
+- Fee: 0.1% per fill (configurable via `TRADING_FEE_RATE`)
+- Account reset: wipes all orders/trades/positions, restores initial balance
+- State persists to PostgreSQL, recovered on server restart
+
+## Trading API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/orders` | Place order (side, order_type, quantity, price, stop_price) |
+| DELETE | `/api/orders/{id}` | Cancel open order |
+| GET | `/api/orders` | List orders (?status=open/filled/cancelled) |
+| GET | `/api/positions` | Current position with live PnL |
+| GET | `/api/trades` | Executed trade history |
+| GET | `/api/account` | Account balances (cash, reserved, equity) |
+| POST | `/api/account/reset` | Reset account |
+
+WebSocket messages: `place_order`, `cancel_order`, `close_position`, `reset_account` (client→server); `order_update`, `trade_executed`, `balance_update`, `position_update` (server→client).
+
 ## Design Specs & Plans
 
 See `docs/superpowers/specs/` for approved design specs (6 total).
 See `docs/superpowers/plans/` for implementation plans.
+
+### Implementation Status
+
+- [x] Spec 1: Foundation & Refactoring
+- [x] Spec 2: Trading Engine
+- [ ] Spec 3: Portfolio & PnL
+- [ ] Spec 4: Chart & Indicators
+- [ ] Spec 5: AI Trading Signals
+- [ ] Spec 6: Polish & Extras
